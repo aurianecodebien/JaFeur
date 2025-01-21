@@ -1,9 +1,12 @@
 package controllers;
 
+import dtos.DockerRequest;
 import entities.Application;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import services.ApplicationService;
@@ -64,7 +67,7 @@ public class ApplicationController {
     @PostMapping("/Config/{id}")
     @Operation(summary = "Configure an application", description = "Configures a specific application with the provided parameters.")
     @Tag(name = "Configuration")
-    public String configApp(@PathVariable("id") int id) {
+    public String configApp(@PathVariable("id") int id, @RequestBody String config) {
         return "ok";
     }
 
@@ -81,5 +84,20 @@ public class ApplicationController {
     @Tag(name = "Crash Status and Errors")
     public String isCrashList() {
         return "ok";
+    }
+
+
+    @PostMapping("/run/{applicationName}")
+    public ResponseEntity<String> runDockerImage(@PathVariable("applicationName") String applicationName) {
+
+        try {
+            String result = applicationService.pullImage(applicationName);
+            return ResponseEntity.ok(result);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error while running Docker image: " + e.getMessage());
+        }
     }
 }
