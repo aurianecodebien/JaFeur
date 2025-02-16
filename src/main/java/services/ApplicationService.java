@@ -50,11 +50,3 @@ public class ApplicationService {
         dockerClient.startContainerCmd(containerName).exec();
     }
 }
-
-
-
-
-
-
-
-

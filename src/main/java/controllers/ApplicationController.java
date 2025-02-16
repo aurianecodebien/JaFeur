@@ -1,7 +1,5 @@
 package controllers;
 
-import com.sun.jna.WString;
-import dtos.DockerRequest;
 import entities.Application;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -44,22 +42,21 @@ public class ApplicationController {
 
     // **Change application status (start, stop, restart)**
     @PutMapping("/Start/{name}")
-    @Operation(summary = "Start a specific application", description = "Starts a specific application by its ID.")
+    @Operation(summary = "Start a specific application", description = "Starts a specific application by its name.")
     @Tag(name = "Change Status")
     public void startApp(@PathVariable("name") String name) {
         applicationService.startContainer(name);
-
     }
 
     @PutMapping("/Stop/{name}")
-    @Operation(summary = "Stop an application", description = "Stops a specific application by its ID.")
+    @Operation(summary = "Stop an application", description = "Stops a specific application by its name.")
     @Tag(name = "Change Status")
     public void stopApp(@PathVariable("name") String name) {
         applicationService.stopContainer(name);
     }
 
     @PutMapping("/Remove/{name}")
-    @Operation(summary = "Stop an application", description = "Stops a specific application by its ID.")
+    @Operation(summary = "Remove an application", description = "Remove a specific application by its name.")
     @Tag(name = "Change Status")
     public void removeApp(@PathVariable("name") String name) {
         applicationService.removeContainer(name);
@@ -96,6 +93,8 @@ public class ApplicationController {
     }
 
     @PostMapping("/run/{applicationName}")
+    @Operation(summary = "Pull docker image", description = "Pull and deploy a Docker Image. You must specify the version.")
+    @Tag(name = "Pull docker image")
     public ResponseEntity<String> runDockerImage(@PathVariable("applicationName") String applicationName) {
 
         try {
