@@ -77,7 +77,7 @@ public class DockerController {
         return "ok";
     }
 
-    @PostMapping("/run/{applicationName}")
+    @PostMapping("/image/run/{applicationName}")
     @Operation(summary = "Pull docker image", description = "Pull and deploy a Docker Image. You must specify the version.")
     @Tag(name = "Image")
     public ResponseEntity<String> runDockerImage(@PathVariable("applicationName") String applicationName) {
@@ -93,7 +93,7 @@ public class DockerController {
         }
     }
 
-    @PostMapping("/buildDockerfile/")
+    @PostMapping("/image/buildDockerfile/")
     @Operation(summary = "Build Docker image from Dockerfile", description = "Build a Docker Image from a Dockerfile.")
     @Tag(name = "Image")
     public ResponseEntity<String> buildDockerfile(@RequestParam String tag, @RequestParam String path) {
@@ -110,7 +110,7 @@ public class DockerController {
         }
     }
 
-    @PostMapping("/startImage/")
+    @PostMapping("/image/start/")
     @Operation(summary = "Start Docker image", description = "Start a Docker Image.")
     @Tag(name = "Image")
     public ResponseEntity<String> startImage(@RequestBody ContainerRunParam params) {
@@ -154,4 +154,17 @@ public class DockerController {
             return ResponseEntity.internalServerError().build();
         }
     }
+
+    @DeleteMapping("/image")
+    @Operation(summary = "Remove image", description = "Remove image by its id.")
+    @Tag(name = "Image")
+    public ResponseEntity<String> removeImage(@RequestParam String imageId) {
+        try {
+            dockerService.removeImage(imageId);
+            return ResponseEntity.ok("Image removed successfully");
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
 }
