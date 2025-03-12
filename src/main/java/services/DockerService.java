@@ -172,6 +172,12 @@ public class DockerService {
         return "Container " + params.getName() + " started! Accessible at http://jafeur-" + hostPort + "/";
     }
 
+    private int generatePortFromName(String name) {
+        int hash = name.hashCode();
+        int basePort = 10000; // Évite conflits avec ports système
+        return basePort + (Math.abs(hash) % 50000); // Ports entre 10000 et 60000
+    }
+
     public void removeImage(String imageId) {
         dockerClient.removeImageCmd(imageId).exec();
     }
