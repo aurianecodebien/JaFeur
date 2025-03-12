@@ -52,6 +52,31 @@ public class DockerService {
         return dockerClient.listImagesCmd().exec();
     }
 
+    public void restartContainer(String containerName) { dockerClient.restartContainerCmd(containerName).exec();}
+
+    public void configureContainer(String containerName, String config) {
+        // Implementation to configure a container, possibly updating environment variables or settings
+        // This is a placeholder as Docker API does not directly support reconfiguring a running container
+    }
+
+    public boolean isContainerCrashed(String containerName) {
+        return dockerClient.listContainersCmd()
+                .withShowAll(true)
+                .exec()
+                .stream()
+                .anyMatch(container -> container.getNames()[0].equals(containerName) && "Exited".equals(container.getState()));
+    }
+
+    public List<String> listCrashedContainers() {
+        return dockerClient.listContainersCmd()
+                .withShowAll(true)
+                .exec()
+                .stream()
+                .filter(container -> "Exited".equals(container.getState()))
+                .map(container -> container.getNames()[0])
+                .toList();
+    }
+
     /// Image management ///
 
     public String pullImage(String imageName) throws InterruptedException {
