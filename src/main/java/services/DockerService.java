@@ -54,11 +54,6 @@ public class DockerService {
 
     public void restartContainer(String containerName) { dockerClient.restartContainerCmd(containerName).exec();}
 
-    public void configureContainer(String containerName, String config) {
-        // Implementation to configure a container, possibly updating environment variables or settings
-        // This is a placeholder as Docker API does not directly support reconfiguring a running container
-    }
-
     public boolean isContainerCrashed(String containerName) {
         return dockerClient.listContainersCmd()
                 .withShowAll(true)

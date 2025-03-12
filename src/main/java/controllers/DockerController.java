@@ -55,11 +55,10 @@ public class DockerController {
     }
 
     // **Configure application settings**
-    @PostMapping("/Config/{name}")
+    @PostMapping("/Config/{id}")
     @Operation(summary = "Configure an application", description = "Configures a specific application with the provided parameters.")
     @Tag(name = "Configuration")
-    public String configApp(@PathVariable("name") String name, @RequestBody String config) {
-        dockerService.configureContainer(name, config);
+    public String configApp(@PathVariable("id") int id, @RequestBody String config) {
         return "ok";
     }
 
