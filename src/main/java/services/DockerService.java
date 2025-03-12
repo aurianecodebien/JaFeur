@@ -116,19 +116,31 @@ public class DockerService {
                 .awaitImageId();
     }
 
-    public String startImage (ContainerRunParam params) {
+    public String startImage(ContainerRunParam params) {
         CreateContainerCmd containerBuilder = dockerClient.createContainerCmd(params.getImage());
+
+        // Définir le nom du conteneur
         if (params.getName() != null) {
             containerBuilder.withName(params.getName());
         }
-        if (params.getPorts() != null) {
-            List<ExposedPort> ports = new ArrayList<>();
-            for (String port : params.getPorts().split(":")) {
-                ExposedPort exposedPort = ExposedPort.tcp(Integer.parseInt(port));
-                ports.add(exposedPort);
-            }
-            containerBuilder.withExposedPorts(ports);
-        }
+
+        // Générer un port basé sur l'ID (évite conflits)
+        int defaultPort = 80; // Port interne de l'app
+        int hostPort = generatePortFromName(params.getName()); // Port unique basé sur le nom
+
+        // Exposer le port
+        // Exposer le port
+        ExposedPort exposedPort = ExposedPort.tcp(defaultPort);
+        HostConfig hostConfig = new HostConfig()
+                .withPortBindings(new PortBinding(Ports.Binding.bindPort(hostPort), exposedPort));
+
+// Appliquer d'abord l'exposition des ports, puis le HostConfig
+        containerBuilder
+                .withExposedPorts(exposedPort)
+                .withHostConfig(hostConfig); // Appliquer la config après
+
+
+        // Ajouter les variables d'environnement
         if (params.getEnv() != null) {
             List<String> env = new ArrayList<>();
             for (Map.Entry<String, String> entry : params.getEnv().entrySet()) {
@@ -136,15 +148,28 @@ public class DockerService {
             }
             containerBuilder.withEnv(env);
         }
+
+        // Ajouter le volume si défini
         if (params.getVolume() != null) {
             containerBuilder.withVolumes(new Volume(params.getVolume()));
         }
+
+        // Ajouter une commande spécifique si définie
         if (params.getCommand() != null) {
             containerBuilder.withCmd(params.getCommand());
         }
+
+        // Ajouter les labels pour Traefik/Nginx
+        containerBuilder.withLabels(Map.of(
+                "traefik.enable", "true",
+                "traefik.http.routers." + params.getName() + ".rule", "Host(`jafeur-" + hostPort + "`)"
+        ));
+
+        // Exécuter la création du conteneur
         CreateContainerResponse container = containerBuilder.exec();
         dockerClient.startContainerCmd(container.getId()).exec();
-        return "Container with ID '" + container.getId() + "' is now running!";
+
+        return "Container " + params.getName() + " started! Accessible at http://jafeur-" + hostPort + "/";
     }
 
     public void removeImage(String imageId) {
