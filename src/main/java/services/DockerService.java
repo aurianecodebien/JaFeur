@@ -8,6 +8,8 @@ import com.github.dockerjava.api.command.PullImageResultCallback;
 import com.github.dockerjava.api.model.*;
 import model.ContainerRunParam;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -15,6 +17,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class DockerService {
@@ -72,6 +75,27 @@ public class DockerService {
                 .toList();
     }
 
+    public ResponseEntity<String> configApp(String id, Map<String, String> conf) {
+
+        ContainerRunParam params = new ContainerRunParam(
+                dockerClient.inspectContainerCmd(id).exec().getName(),
+                dockerClient.inspectContainerCmd(id).exec().getNetworkSettings().getPorts().toString(),
+                conf,
+                dockerClient.inspectContainerCmd(id).exec().getImageId(),
+                null,
+                null
+        );
+        dockerClient.removeContainerCmd(id).exec();
+        try {
+            startImage(params);
+            return ResponseEntity.ok(id);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error: " + e.getMessage());
+        }
+    }
+
+
     /// Image management ///
 
     public String pullImage(String imageName) throws InterruptedException {
@@ -106,7 +130,11 @@ public class DockerService {
             containerBuilder.withExposedPorts(ports);
         }
         if (params.getEnv() != null) {
-            containerBuilder.withEnv(params.getEnv());
+            List<String> env = new ArrayList<>();
+            for (Map.Entry<String, String> entry : params.getEnv().entrySet()) {
+                env.add(entry.getKey() + "=" + entry.getValue());
+            }
+            containerBuilder.withEnv(env);
         }
         if (params.getVolume() != null) {
             containerBuilder.withVolumes(new Volume(params.getVolume()));
