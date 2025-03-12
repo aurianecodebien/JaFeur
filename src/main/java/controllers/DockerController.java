@@ -13,6 +13,7 @@ import services.DockerService;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("")
@@ -47,34 +48,34 @@ public class DockerController {
         dockerService.removeContainer(name);
     }
 
-    @PutMapping("/Restart/{id}")
-    @Operation(summary = "Restart an application", description = "Restarts a specific application by its ID.")
+    @PutMapping("/Restart/{name}")
+    @Operation(summary = "Restart an application", description = "Restarts a specific application by its name.")
     @Tag(name = "Change Status")
-    public String restartApp(@PathVariable("id") int id) {
-        return "ok";
+    public void restartApp(@PathVariable("name") String name) {
+        dockerService.restartContainer(name);
     }
 
     // **Configure application settings**
     @PostMapping("/Config/{id}")
     @Operation(summary = "Configure an application", description = "Configures a specific application with the provided parameters.")
     @Tag(name = "Configuration")
-    public String configApp(@PathVariable("id") int id, @RequestBody String config) {
-        return "ok";
+    public ResponseEntity<String> configApp(@PathVariable("id") String id, @RequestBody Map<String, String> config) {
+        return dockerService.configApp(id, config);
     }
 
     // **Check crash status**
-    @PutMapping("IsCrash/{id}")
+    @PutMapping("IsCrash/{name}")
     @Operation(summary = "Check application crash status", description = "Checks whether a specific application has crashed.")
     @Tag(name = "Crash Status and Errors")
-    public String isCrash(@PathVariable("id") int id) {
-        return "ok";
+    public boolean isCrash(@PathVariable("name") String name) {
+        return dockerService.isContainerCrashed(name);
     }
 
     @PutMapping("List/IsCrash")
     @Operation(summary = "List crashed applications", description = "Returns a list of applications that have crashed.")
     @Tag(name = "Crash Status and Errors")
-    public String isCrashList() {
-        return "ok";
+    public List<String> isCrashList() {
+        return dockerService.listCrashedContainers();
     }
 
     @PostMapping("/image/run/{applicationName}")

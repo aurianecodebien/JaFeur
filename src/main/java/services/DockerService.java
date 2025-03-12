@@ -8,6 +8,8 @@ import com.github.dockerjava.api.command.PullImageResultCallback;
 import com.github.dockerjava.api.model.*;
 import model.ContainerRunParam;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -52,6 +54,47 @@ public class DockerService {
     public List<Image> getAllImages() {
         return dockerClient.listImagesCmd().exec();
     }
+
+    public void restartContainer(String containerName) { dockerClient.restartContainerCmd(containerName).exec();}
+
+    public boolean isContainerCrashed(String containerName) {
+        return dockerClient.listContainersCmd()
+                .withShowAll(true)
+                .exec()
+                .stream()
+                .anyMatch(container -> container.getNames()[0].equals(containerName) && "Exited".equals(container.getState()));
+    }
+
+    public List<String> listCrashedContainers() {
+        return dockerClient.listContainersCmd()
+                .withShowAll(true)
+                .exec()
+                .stream()
+                .filter(container -> "Exited".equals(container.getState()))
+                .map(container -> container.getNames()[0])
+                .toList();
+    }
+
+    public ResponseEntity<String> configApp(String id, Map<String, String> conf) {
+
+        ContainerRunParam params = new ContainerRunParam(
+                dockerClient.inspectContainerCmd(id).exec().getName(),
+                dockerClient.inspectContainerCmd(id).exec().getNetworkSettings().getPorts().toString(),
+                conf,
+                dockerClient.inspectContainerCmd(id).exec().getImageId(),
+                null,
+                null
+        );
+        dockerClient.removeContainerCmd(id).exec();
+        try {
+            startImage(params);
+            return ResponseEntity.ok(id);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error: " + e.getMessage());
+        }
+    }
+
 
     /// Image management ///
 
@@ -99,7 +142,11 @@ public class DockerService {
 
         // Ajouter les variables d'environnement
         if (params.getEnv() != null) {
-            containerBuilder.withEnv(params.getEnv());
+            List<String> env = new ArrayList<>();
+            for (Map.Entry<String, String> entry : params.getEnv().entrySet()) {
+                env.add(entry.getKey() + "=" + entry.getValue());
+            }
+            containerBuilder.withEnv(env);
         }
 
         // Ajouter le volume si défini
