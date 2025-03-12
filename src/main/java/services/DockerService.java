@@ -52,6 +52,26 @@ public class DockerService {
         return dockerClient.listImagesCmd().exec();
     }
 
+    public void restartContainer(String containerName) { dockerClient.restartContainerCmd(containerName).exec();}
+
+    public boolean isContainerCrashed(String containerName) {
+        return dockerClient.listContainersCmd()
+                .withShowAll(true)
+                .exec()
+                .stream()
+                .anyMatch(container -> container.getNames()[0].equals(containerName) && "Exited".equals(container.getState()));
+    }
+
+    public List<String> listCrashedContainers() {
+        return dockerClient.listContainersCmd()
+                .withShowAll(true)
+                .exec()
+                .stream()
+                .filter(container -> "Exited".equals(container.getState()))
+                .map(container -> container.getNames()[0])
+                .toList();
+    }
+
     /// Image management ///
 
     public String pullImage(String imageName) throws InterruptedException {
