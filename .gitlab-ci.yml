@@ -1,0 +1,11 @@
+image: maven:3.6.3-jdk-11
+
+stages:
+  - test
+
+test:
+  stage: test
+  script:
+    - echo "Running tests"
+    - mvn test
+    - echo "Tests completed"
