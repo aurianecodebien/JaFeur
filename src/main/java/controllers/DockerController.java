@@ -13,6 +13,7 @@ import services.DockerService;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("")
@@ -58,8 +59,8 @@ public class DockerController {
     @PostMapping("/Config/{id}")
     @Operation(summary = "Configure an application", description = "Configures a specific application with the provided parameters.")
     @Tag(name = "Configuration")
-    public String configApp(@PathVariable("id") int id, @RequestBody String config) {
-        return "ok";
+    public ResponseEntity<String> configApp(@PathVariable("id") String id, @RequestBody Map<String, String> config) {
+        return dockerService.configApp(id, config);
     }
 
     // **Check crash status**
