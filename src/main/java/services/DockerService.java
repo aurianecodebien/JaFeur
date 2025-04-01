@@ -125,19 +125,23 @@ public class DockerService {
         }
 
         // Générer un port basé sur l'ID (évite conflits)
-        int defaultPort = 80; // Port interne de l'app
-        int hostPort = generatePortFromName(params.getName()); // Port unique basé sur le nom
+//        int defaultPort = 80; // Port interne de l'app
+//        int hostPort = generatePortFromName(params.getName()); // Port unique basé sur le nom
+//
+//        // Exposer le port
+//        ExposedPort exposedPort = ExposedPort.tcp(defaultPort);
+//        HostConfig hostConfig = new HostConfig()
+//                .withPortBindings(new PortBinding(Ports.Binding.bindPort(hostPort), exposedPort));
+//
+//// Appliquer d'abord l'exposition des ports, puis le HostConfig
+//        containerBuilder
+//                .withExposedPorts(exposedPort)
+//                .withHostConfig(hostConfig); // Appliquer la config après
 
-        // Exposer le port
-        // Exposer le port
-        ExposedPort exposedPort = ExposedPort.tcp(defaultPort);
-        HostConfig hostConfig = new HostConfig()
-                .withPortBindings(new PortBinding(Ports.Binding.bindPort(hostPort), exposedPort));
-
-// Appliquer d'abord l'exposition des ports, puis le HostConfig
         containerBuilder
-                .withExposedPorts(exposedPort)
-                .withHostConfig(hostConfig); // Appliquer la config après
+                .withExposedPorts(ExposedPort.tcp(80))
+                .withHostConfig(new HostConfig().withNetworkMode("web")); // <-- le réseau Docker partagé avec Traefik
+
 
 
         // Ajouter les variables d'environnement
@@ -162,14 +166,17 @@ public class DockerService {
         // Ajouter les labels pour Traefik/Nginx
         containerBuilder.withLabels(Map.of(
                 "traefik.enable", "true",
-                "traefik.http.routers." + params.getName() + ".rule", "Host(`jafeur-" + hostPort + "`)"
+                "traefik.http.routers." + params.getName() + ".rule", "Host(`jafeur-" + params.getName() + ".localhost`)",
+                "traefik.http.routers." + params.getName() + ".entrypoints", "web",
+                "traefik.http.services." + params.getName() + ".loadbalancer.server.port", "80"
         ));
+
 
         // Exécuter la création du conteneur
         CreateContainerResponse container = containerBuilder.exec();
         dockerClient.startContainerCmd(container.getId()).exec();
 
-        return "Container " + params.getName() + " started! Accessible at http://jafeur-" + hostPort + "/";
+        return "Container " + params.getName() + " started! Accessible at http://jafeur-" + params.getName() + ".localhost";
     }
 
     private int generatePortFromName(String name) {
