@@ -29,7 +29,7 @@ public class DockerService {
         this.dockerClient = dockerClient;
     }
 
-    /// Container management ///
+    /// Container management
 
     public void stopContainer(String containerName) {
         dockerClient.stopContainerCmd(containerName).exec();
@@ -49,10 +49,6 @@ public class DockerService {
 
     public List<Container> getAllContainers() {
         return dockerClient.listContainersCmd().withShowAll(true).exec();
-    }
-
-    public List<Image> getAllImages() {
-        return dockerClient.listImagesCmd().exec();
     }
 
     public void restartContainer(String containerName) { dockerClient.restartContainerCmd(containerName).exec();}
@@ -96,7 +92,7 @@ public class DockerService {
     }
 
 
-    /// Image management ///
+    /// Image management
 
     public String pullImage(String imageName) throws InterruptedException {
         dockerClient.pullImageCmd(imageName).exec(new PullImageResultCallback()).awaitCompletion();
@@ -105,6 +101,10 @@ public class DockerService {
         dockerClient.startContainerCmd(container.getId()).exec();
 
         return "Container with ID '" + container.getId() + "' is now running!";
+    }
+
+    public List<Image> getAllImages() {
+        return dockerClient.listImagesCmd().exec();
     }
 
     public String buildDockerfile(String tag, Path path) {
@@ -189,7 +189,4 @@ public class DockerService {
         dockerClient.removeImageCmd(imageId).exec();
     }
 
-    public void listenAppCrash() {
-        //dockerClient.eventsCmd().exec(new ApplicationCrashListener());
-    }
 }
