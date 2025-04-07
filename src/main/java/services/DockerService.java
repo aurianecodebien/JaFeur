@@ -58,7 +58,7 @@ public class DockerService {
                 .withShowAll(true)
                 .exec()
                 .stream()
-                .anyMatch(container -> container.getNames()[0].equals(containerName) && "Exited".equals(container.getState()));
+                .anyMatch(container -> container.getNames()[0].equals("/" + containerName) && "exited".equals(container.getState()));
     }
 
     public List<String> listCrashedContainers() {
