@@ -2,9 +2,7 @@ package org.example.jafeur;
 
 import com.github.dockerjava.api.model.Image;
 import model.ContainerRunParam;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import services.DockerService;
@@ -17,23 +15,23 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class ImageTests {
 
     @Autowired
     private DockerService dockerService;
 
     @Test
+    @Order(1)
     void testPullImage() throws InterruptedException {
         String imageName = "hello-world:latest";
         String result = dockerService.pullImage(imageName);
         assertTrue(result.contains("is now running"));
-        // remove container and image
-        dockerService.stopContainer(result.split("'")[1]);
-        dockerService.removeContainer(result);
-        dockerService.removeImage("hello-world:latest");
+        dockerService.removeContainer(result.split("'")[1]);
     }
 
     @Test
+    @Order(2)
     void testGetAllImages() {
         List<Image> images = dockerService.getAllImages();
         // Assert that the list is not null and not empty
@@ -44,6 +42,7 @@ class ImageTests {
     }
 
     @Test
+    @Order(3)
     void testRemoveImage() {
         String imageId = "hello-world:latest";
         dockerService.removeImage(imageId);
@@ -52,6 +51,7 @@ class ImageTests {
     }
 
     @Test
+    @Order(4)
     void testBuildDockerfile() {
         Path dockerfilePath = Paths.get("src/test/resources/Dockerfile");
         String tag = "test-image:latest";
@@ -61,6 +61,7 @@ class ImageTests {
     }
 
     @Test
+    @Order(5)
     void testStartImage() {
         ContainerRunParam params = new ContainerRunParam("test-start-container", "8080:80", Map.of("ENV_VAR", "value"), "test-image", "/data", "echo Hello");
         String result = dockerService.startImage(params);
