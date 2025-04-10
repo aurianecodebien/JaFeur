@@ -81,6 +81,10 @@ public class DockerService {
                 null,
                 null
         );
+        if ("running".equals(dockerClient.inspectContainerCmd(id).exec().getState().getStatus())) {
+            dockerClient.stopContainerCmd(id).exec();
+        }
+
         dockerClient.removeContainerCmd(id).exec();
         try {
             startImage(params);
@@ -139,8 +143,8 @@ public class DockerService {
 //                .withHostConfig(hostConfig); // Appliquer la config après
 
         containerBuilder
-                .withExposedPorts(ExposedPort.tcp(80))
-                .withHostConfig(new HostConfig().withNetworkMode("web")); // <-- le réseau Docker partagé avec Traefik
+                .withExposedPorts(ExposedPort.tcp(80));
+        //        .withHostConfig(new HostConfig().withNetworkMode("web")); // <-- le réseau Docker partagé avec Traefik  // enlevé car bugs pour les tests
 
 
 

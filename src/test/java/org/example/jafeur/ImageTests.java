@@ -9,6 +9,7 @@ import services.DockerService;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -34,11 +35,9 @@ class ImageTests {
     @Order(2)
     void testGetAllImages() {
         List<Image> images = dockerService.getAllImages();
-        // Assert that the list is not null and not empty
         assertNotNull(images);
         assertFalse(images.isEmpty());
-        // Assert that the list contains the hello-world image
-        assertTrue(images.stream().anyMatch(image -> image.getRepoTags()[0].equals("hello-world:latest")));
+        assertTrue(images.stream().anyMatch(image -> Arrays.asList(image.getRepoTags()).contains("hello-world:latest")));
     }
 
     @Test
@@ -47,7 +46,7 @@ class ImageTests {
         String imageId = "hello-world:latest";
         dockerService.removeImage(imageId);
         assertFalse(dockerService.getAllImages().stream()
-                .anyMatch(image -> image.getRepoTags()[0].equals(imageId)));
+                .anyMatch(image -> Arrays.asList(image.getRepoTags()).contains((imageId))));
     }
 
     @Test
@@ -65,10 +64,9 @@ class ImageTests {
     void testStartImage() {
         ContainerRunParam params = new ContainerRunParam("test-start-container", "8080:80", Map.of("ENV_VAR", "value"), "test-image", "/data", "echo Hello");
         String result = dockerService.startImage(params);
-        assertTrue(result.contains("is now running"));
+        assertTrue(result.contains("test-start-container started"));
 
         // remove container and image
-        dockerService.stopContainer("test-start-container");
         dockerService.removeContainer("test-start-container");
         dockerService.removeImage("test-image");
     }

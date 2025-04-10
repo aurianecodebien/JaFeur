@@ -2,21 +2,22 @@ package org.example.jafeur;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerResponse;
+import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.model.Container;
-import com.github.dockerjava.api.model.HostConfig;
-import com.github.dockerjava.api.model.RestartPolicy;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import services.DockerService;
 
-import java.awt.*;
-
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -81,6 +82,23 @@ public class ContainerTests {
 
     @Test
     @Order(5)
+    void testConfigApp() {
+        String containerName = "test-container";
+        dockerService.configApp(containerName, Map.of("VAR_TEST", "new_value", "VAR_TEST2", "new_value2"));
+
+        InspectContainerResponse containerInfo = dockerClient.inspectContainerCmd(containerName).exec();
+        List<String> envVariables = Arrays.asList(Objects.requireNonNull(containerInfo.getConfig().getEnv()));
+
+        assertTrue(envVariables.contains("VAR_TEST=new_value"));
+        assertTrue(envVariables.contains("VAR_TEST2=new_value2"));
+
+        // assert that the container is still running
+        assertTrue(dockerService.getRunningContainers().stream()
+                .anyMatch(container -> container.getNames()[0].equals("/" + containerName)));
+    }
+
+    @Test
+    @Order(6)
     void testStopContainer() {
         String containerName = "test-container";
         dockerService.stopContainer(containerName);
@@ -99,7 +117,7 @@ public class ContainerTests {
     }
 
     @Test
-    @Order(6)
+    @Order(7)
     void testRemoveContainer() {
         String containerName = "test-container";
         dockerService.removeContainer(containerName);
@@ -108,18 +126,25 @@ public class ContainerTests {
     }
 
     @Test
-    void testListCrashedContainers() {
-        // Test the listCrashedContainers method
+    @Order(8)
+    void testCrashingContainer() throws InterruptedException {
+        Path dockerfilePath = Paths.get("src/test/resources/crashing-container/Dockerfile");
+        String tag = "crashing-container:latest";
+        String imageId = dockerService.buildDockerfile(tag, dockerfilePath);
+        CreateContainerResponse createdContainer = dockerClient.createContainerCmd(imageId)
+                .withName("crashing-container")
+                .exec();
+        dockerClient.startContainerCmd(createdContainer.getId()).exec();
+        Thread.sleep(500);
+        assertTrue(dockerService.getAllContainers().stream()
+                .anyMatch(container -> container.getNames()[0].equals("/crashing-container") && container.getState().equals("exited")));
     }
 
     @Test
+    @Order(9)
     void testIsContainerCrashed() {
-        // Test the isContainerCrashed method
-    }
-
-    @Test
-    void testConfigApp() {
-        // Test the configApp method
+        assertTrue(dockerService.isContainerCrashed("crashing-container"));
+        dockerService.removeContainer("crashing-container");
     }
 
 }
