@@ -54,8 +54,11 @@ class ImageTests {
     void testRemoveImage() {
         String imageId = "hello-world:latest";
         dockerService.removeImage(imageId);
-        assertFalse(dockerService.getAllImages().stream()
-                .anyMatch(image -> Arrays.asList(image.getRepoTags()).contains((imageId))));
+        assertTrue(dockerClient.listImagesCmd()
+                .withImageNameFilter(imageId)
+                .exec()
+                .stream()
+                .allMatch(image -> image.getRepoTags() == null || !Arrays.asList(image.getRepoTags()).contains(imageId)));
     }
 
     @Test
