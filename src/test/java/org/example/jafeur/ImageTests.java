@@ -1,5 +1,6 @@
 package org.example.jafeur;
 
+import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.model.Image;
 import model.ContainerRunParam;
 import org.junit.jupiter.api.*;
@@ -21,6 +22,14 @@ class ImageTests {
 
     @Autowired
     private DockerService dockerService;
+
+    private final DockerClient dockerClient;
+
+    @Autowired
+    ImageTests(DockerClient dockerClient) {
+        this.dockerClient = dockerClient;
+    }
+
 
     @Test
     @Order(1)
@@ -66,7 +75,17 @@ class ImageTests {
         String result = dockerService.startImage(params);
         assertTrue(result.contains("test-start-container started"));
 
-        // remove container and image
+        // if the container is running, stop it
+        String id = dockerClient.listContainersCmd()
+                .withNameFilter(Arrays.asList("test-start-container"))
+                .exec()
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Container not found"))
+                .getId();
+        if ("running".equals(dockerClient.inspectContainerCmd(id).exec().getState().getStatus())) {
+            dockerClient.stopContainerCmd(id).exec();
+        }
         dockerService.removeContainer("test-start-container");
         dockerService.removeImage("test-image");
     }
