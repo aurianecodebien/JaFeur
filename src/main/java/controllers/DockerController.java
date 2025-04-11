@@ -2,7 +2,6 @@ package controllers;
 
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.Image;
-import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import model.ContainerRunParam;
