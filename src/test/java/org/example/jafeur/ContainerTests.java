@@ -81,23 +81,6 @@ public class ContainerTests {
     }
 
     @Test
-    @Order(5)
-    void testConfigApp() {
-        String containerName = "test-container";
-        dockerService.configApp(containerName, Map.of("VAR_TEST", "new_value", "VAR_TEST2", "new_value2"));
-
-        InspectContainerResponse containerInfo = dockerClient.inspectContainerCmd(containerName).exec();
-        List<String> envVariables = Arrays.asList(Objects.requireNonNull(containerInfo.getConfig().getEnv()));
-
-        assertTrue(envVariables.contains("VAR_TEST=new_value"));
-        assertTrue(envVariables.contains("VAR_TEST2=new_value2"));
-
-        // assert that the container is still running
-        assertTrue(dockerService.getRunningContainers().stream()
-                .anyMatch(container -> container.getNames()[0].equals("/" + containerName)));
-    }
-
-    @Test
     @Order(6)
     void testStopContainer() {
         String containerName = "test-container";

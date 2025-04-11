@@ -1,10 +1,7 @@
 package services;
 
 import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.command.BuildImageResultCallback;
-import com.github.dockerjava.api.command.CreateContainerCmd;
-import com.github.dockerjava.api.command.CreateContainerResponse;
-import com.github.dockerjava.api.command.PullImageResultCallback;
+import com.github.dockerjava.api.command.*;
 import com.github.dockerjava.api.model.*;
 import model.ContainerRunParam;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -70,10 +67,14 @@ public class DockerService {
 
     public ResponseEntity<String> configApp(String name, Map<String, Object> conf) {
         try {
-            // 1. Récupération des anciennes variables d'env
-            String[] oldEnvList = dockerClient.inspectContainerCmd(name).exec().getConfig().getEnv();
+            // 🔁 Initialisation de la map finale
             Map<String, String> envMap = new HashMap<>();
 
+            // 🔍 Récupération de l'ancien conteneur
+            InspectContainerResponse container = dockerClient.inspectContainerCmd(name).exec();
+
+            // 🧠 Extraire ses anciennes env
+            String[] oldEnvList = container.getConfig().getEnv();
             if (oldEnvList != null) {
                 for (String env : oldEnvList) {
                     String[] parts = env.split("=", 2);
@@ -83,35 +84,35 @@ public class DockerService {
                 }
             }
 
-
-            // 2. Extraction des maps add / update / delete depuis le JSON
+            // 🔄 Application des changements
             Map<String, String> toAdd = (Map<String, String>) conf.getOrDefault("add", Map.of());
             Map<String, String> toUpdate = (Map<String, String>) conf.getOrDefault("update", Map.of());
             Map<String, String> toDelete = (Map<String, String>) conf.getOrDefault("delete", Map.of());
 
-            // 3. Application des ajouts et modifications
             toAdd.forEach(envMap::put);
             toUpdate.forEach(envMap::put);
-
-            // 4. Suppressions
             toDelete.keySet().forEach(envMap::remove);
 
-            // 5. Reconstruction de ContainerRunParam avec nouvelle map d'env
+            // ✅ Reconstruction du conteneur avec les bonnes infos
             ContainerRunParam params = new ContainerRunParam(
-                    dockerClient.inspectContainerCmd(name).exec().getName(),
-                    dockerClient.inspectContainerCmd(name).exec().getNetworkSettings().getPorts().toString(),
+                    container.getName().replace("/", ""), // le nom avec '/' à retirer
+                    container.getNetworkSettings().getPorts().toString(),
                     envMap,
-                    dockerClient.inspectContainerCmd(name).exec().getImageId(),
+                    container.getImageId(),
                     null,
                     null
             );
 
-            // 6. Stop + remove + restart
-            if ("running".equals(dockerClient.inspectContainerCmd(name).exec().getState().getStatus())) {
+            // 💥 Stop + Remove
+            if ("running".equals(container.getState().getStatus())) {
                 dockerClient.stopContainerCmd(name).exec();
             }
             dockerClient.removeContainerCmd(name).exec();
 
+            // 🐳 Log final
+            System.out.println("Variables finales envoyées à Docker : " + params.getEnv());
+
+            // 🚀 Redéploiement
             startImage(params);
             return ResponseEntity.ok(name);
 
@@ -120,6 +121,7 @@ public class DockerService {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error: " + e.getMessage());
         }
     }
+
 
 
 
