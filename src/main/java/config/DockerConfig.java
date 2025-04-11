@@ -14,10 +14,12 @@ public class DockerConfig {
 
     @Bean
     public DockerClient dockerClient() {
+        // Configure la connexion au démon Docker local via le socket Unix
         var config = DefaultDockerClientConfig.createDefaultConfigBuilder()
                 .withDockerHost("unix:///var/run/docker.sock")
                 .build();
 
+        // Crée un client HTTP pour communiquer avec l’API Docker
         var httpClient = new OkDockerHttpClient.Builder()
                 .dockerHost(config.getDockerHost())
                 .sslConfig(config.getSSLConfig())
