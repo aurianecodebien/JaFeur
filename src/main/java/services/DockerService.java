@@ -152,14 +152,16 @@ public class DockerService {
     // Applique une nouvelle configuration d'environnement (redéploiement)
     public ResponseEntity<String> configApp(String id, Map<String, String> conf) {
 
+        var inspect = dockerClient.inspectContainerCmd(id).exec();
         ContainerRunParam params = new ContainerRunParam(
-                dockerClient.inspectContainerCmd(id).exec().getName(),
-                dockerClient.inspectContainerCmd(id).exec().getNetworkSettings().getPorts().toString(),
+                inspect.getName(),
+                inspect.getNetworkSettings().getPorts().toString(),
                 conf,
-                dockerClient.inspectContainerCmd(id).exec().getImageId(),
+                inspect.getImageId(),
                 null,
                 null
         );
+
         if ("running".equals(dockerClient.inspectContainerCmd(id).exec().getState().getStatus())) {
             dockerClient.stopContainerCmd(id).exec();
         }
@@ -239,12 +241,6 @@ public class DockerService {
         dockerClient.startContainerCmd(container.getId()).exec();
 
         return "Container " + params.getName() + " started! Accessible at http://jafeur-" + params.getName() + ".localhost";
-    }
-
-    private int generatePortFromName(String name) {
-        int hash = name.hashCode();
-        int basePort = 10000;
-        return basePort + (Math.abs(hash) % 50000);
     }
 
     public void removeImage(String imageId) {
