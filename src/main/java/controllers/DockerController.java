@@ -168,4 +168,16 @@ public class DockerController {
         }
     }
 
+    @PostMapping("/update")
+    @Operation(summary = "Update application", description = "Update a specific application by its name.")
+    @Tag(name = "Update")
+    public ResponseEntity<String> updateApp(@RequestParam String name, @RequestParam String dockerfilePath) {
+        try {
+            dockerService.updateApp(name, dockerfilePath);
+            return ResponseEntity.ok("Application updated successfully");
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
 }
