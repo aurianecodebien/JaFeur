@@ -55,12 +55,14 @@ public class DockerController {
         dockerService.restartContainer(name);
     }
 
-    // **Configure application settings**
-    @PostMapping("/Config/{id}")
-    @Operation(summary = "Configure an application", description = "Configures a specific application with the provided parameters.")
+    @PostMapping("/Config/byName/{name}")
+    @Operation(
+            summary = "Configure an application",
+            description = "Allows adding, updating, or deleting environment variables of a container. The JSON body must contain `add`, `update`, and/or `delete` keys."
+    )
     @Tag(name = "Configuration")
-    public ResponseEntity<String> configApp(@PathVariable("id") String id, @RequestBody Map<String, String> config) {
-        return dockerService.configApp(id, config);
+    public ResponseEntity<String> configAppByName(@PathVariable("name") String name, @RequestBody Map<String, Object> config) {
+        return dockerService.configApp(name, config);
     }
 
     // **Check crash status**

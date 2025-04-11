@@ -14,10 +14,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class DockerService {
@@ -71,29 +68,59 @@ public class DockerService {
                 .toList();
     }
 
-    public ResponseEntity<String> configApp(String id, Map<String, String> conf) {
-
-        ContainerRunParam params = new ContainerRunParam(
-                dockerClient.inspectContainerCmd(id).exec().getName(),
-                dockerClient.inspectContainerCmd(id).exec().getNetworkSettings().getPorts().toString(),
-                conf,
-                dockerClient.inspectContainerCmd(id).exec().getImageId(),
-                null,
-                null
-        );
-        if ("running".equals(dockerClient.inspectContainerCmd(id).exec().getState().getStatus())) {
-            dockerClient.stopContainerCmd(id).exec();
-        }
-
-        dockerClient.removeContainerCmd(id).exec();
+    public ResponseEntity<String> configApp(String name, Map<String, Object> conf) {
         try {
+            // 1. Récupération des anciennes variables d'env
+            String[] oldEnvList = dockerClient.inspectContainerCmd(name).exec().getConfig().getEnv();
+            Map<String, String> envMap = new HashMap<>();
+
+            if (oldEnvList != null) {
+                for (String env : oldEnvList) {
+                    String[] parts = env.split("=", 2);
+                    if (parts.length == 2) {
+                        envMap.put(parts[0], parts[1]);
+                    }
+                }
+            }
+
+
+            // 2. Extraction des maps add / update / delete depuis le JSON
+            Map<String, String> toAdd = (Map<String, String>) conf.getOrDefault("add", Map.of());
+            Map<String, String> toUpdate = (Map<String, String>) conf.getOrDefault("update", Map.of());
+            Map<String, String> toDelete = (Map<String, String>) conf.getOrDefault("delete", Map.of());
+
+            // 3. Application des ajouts et modifications
+            toAdd.forEach(envMap::put);
+            toUpdate.forEach(envMap::put);
+
+            // 4. Suppressions
+            toDelete.keySet().forEach(envMap::remove);
+
+            // 5. Reconstruction de ContainerRunParam avec nouvelle map d'env
+            ContainerRunParam params = new ContainerRunParam(
+                    dockerClient.inspectContainerCmd(name).exec().getName(),
+                    dockerClient.inspectContainerCmd(name).exec().getNetworkSettings().getPorts().toString(),
+                    envMap,
+                    dockerClient.inspectContainerCmd(name).exec().getImageId(),
+                    null,
+                    null
+            );
+
+            // 6. Stop + remove + restart
+            if ("running".equals(dockerClient.inspectContainerCmd(name).exec().getState().getStatus())) {
+                dockerClient.stopContainerCmd(name).exec();
+            }
+            dockerClient.removeContainerCmd(name).exec();
+
             startImage(params);
-            return ResponseEntity.ok(id);
+            return ResponseEntity.ok(name);
+
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error: " + e.getMessage());
         }
     }
+
 
 
     /// Image management
