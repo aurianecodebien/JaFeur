@@ -1,0 +1,39 @@
+version: "3.8"
+
+networks:
+  traefik-network:
+    name: traefik-network
+
+services:
+  jafeur:
+    build:
+      context: .
+    container_name: jafeur
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.jafeur.rule=Host(`jafeur.localhost`)"
+      - "traefik.http.routers.jafeur.entrypoints=web"
+      - "traefik.http.services.jafeur.loadbalancer.server.port=8080"
+    networks:
+      - traefik-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=default
+    ports:
+      - "8080"
+    depends_on:
+      - traefik
+
+  traefik:
+    image: traefik:v2.10
+    container_name: traefik
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "8082:80"   # <-- ce port n'est sûrement pas occupé
+      - "8081:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    networks:
+      - traefik-network
