@@ -149,6 +149,7 @@ public class DockerService {
                 .toList();
     }
 
+    // Applique une nouvelle configuration d'environnement (redéploiement)
     public ResponseEntity<String> configApp(String id, Map<String, String> conf) {
 
         ContainerRunParam params = new ContainerRunParam(
@@ -198,35 +199,17 @@ public class DockerService {
                 .awaitImageId();
     }
 
+    // Lance un conteneur avec les paramètres nécessaires (env, volume, traefik)
     public String startImage(ContainerRunParam params) {
         CreateContainerCmd containerBuilder = dockerClient.createContainerCmd(params.getImage());
 
-        // Définir le nom du conteneur
         if (params.getName() != null) {
             containerBuilder.withName(params.getName());
         }
 
-        // Générer un port basé sur l'ID (évite conflits)
-//        int defaultPort = 80; // Port interne de l'app
-//        int hostPort = generatePortFromName(params.getName()); // Port unique basé sur le nom
-//
-//        // Exposer le port
-//        ExposedPort exposedPort = ExposedPort.tcp(defaultPort);
-//        HostConfig hostConfig = new HostConfig()
-//                .withPortBindings(new PortBinding(Ports.Binding.bindPort(hostPort), exposedPort));
-//
-//// Appliquer d'abord l'exposition des ports, puis le HostConfig
-//        containerBuilder
-//                .withExposedPorts(exposedPort)
-//                .withHostConfig(hostConfig); // Appliquer la config après
-
         containerBuilder
                 .withExposedPorts(ExposedPort.tcp(80));
-        //        .withHostConfig(new HostConfig().withNetworkMode("web")); // <-- le réseau Docker partagé avec Traefik  // enlevé car bugs pour les tests
 
-
-
-        // Ajouter les variables d'environnement
         if (params.getEnv() != null) {
             List<String> env = new ArrayList<>();
             for (Map.Entry<String, String> entry : params.getEnv().entrySet()) {
@@ -235,17 +218,15 @@ public class DockerService {
             containerBuilder.withEnv(env);
         }
 
-        // Ajouter le volume si défini
         if (params.getVolume() != null) {
             containerBuilder.withVolumes(new Volume(params.getVolume()));
         }
 
-        // Ajouter une commande spécifique si définie
         if (params.getCommand() != null) {
             containerBuilder.withCmd(params.getCommand());
         }
 
-        // Ajouter les labels pour Traefik/Nginx
+        // Configuration des labels pour exposer l'app via Traefik
         containerBuilder.withLabels(Map.of(
                 "traefik.enable", "true",
                 "traefik.http.routers." + params.getName() + ".rule", "Host(`jafeur-" + params.getName() + ".localhost`)",
@@ -254,7 +235,6 @@ public class DockerService {
         ));
 
 
-        // Exécuter la création du conteneur
         CreateContainerResponse container = containerBuilder.exec();
         dockerClient.startContainerCmd(container.getId()).exec();
 
@@ -263,8 +243,8 @@ public class DockerService {
 
     private int generatePortFromName(String name) {
         int hash = name.hashCode();
-        int basePort = 10000; // Évite conflits avec ports système
-        return basePort + (Math.abs(hash) % 50000); // Ports entre 10000 et 60000
+        int basePort = 10000;
+        return basePort + (Math.abs(hash) % 50000);
     }
 
     public void removeImage(String imageId) {
