@@ -2,7 +2,6 @@ package controllers;
 
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.Image;
-import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import model.ContainerRunParam;
@@ -27,6 +26,7 @@ public class DockerController {
         this.dockerService = dockerService;
     }
 
+    // **Change application status (start, stop, restart)**
     @PutMapping("/Start/{name}")
     @Operation(summary = "Start a specific application", description = "Starts a specific application by its name.")
     @Tag(name = "Change Status")
@@ -55,6 +55,7 @@ public class DockerController {
         dockerService.restartContainer(name);
     }
 
+    // **Configure application settings**
     @PostMapping("/Config/{id}")
     @Operation(summary = "Configure an application", description = "Configures a specific application with the provided parameters.")
     @Tag(name = "Configuration")
@@ -62,6 +63,7 @@ public class DockerController {
         return dockerService.configApp(id, config);
     }
 
+    // **Check crash status**
     @PutMapping("IsCrash/{name}")
     @Operation(summary = "Check application crash status", description = "Checks whether a specific application has crashed.")
     @Tag(name = "Crash Status and Errors")
@@ -129,7 +131,6 @@ public class DockerController {
     @Tag(name = "Retrieve Information")
     public ResponseEntity<List<Container>> getContainers(@PathVariable Boolean showAll) {
         try {
-            // Renvoie soit tous les conteneurs, soit uniquement ceux en cours d'exécution
             List<Container> containers;
             if (showAll) {
                 containers = dockerService.getAllContainers();
@@ -166,4 +167,17 @@ public class DockerController {
             return ResponseEntity.internalServerError().build();
         }
     }
+
+    @PostMapping("/update")
+    @Operation(summary = "Update application", description = "Update a specific application by its name.")
+    @Tag(name = "Update")
+    public ResponseEntity<String> updateApp(@RequestParam String name, @RequestParam String dockerfilePath) {
+        try {
+            dockerService.updateApp(name, dockerfilePath);
+            return ResponseEntity.ok("Application updated successfully");
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
 }
