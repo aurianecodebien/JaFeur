@@ -68,7 +68,10 @@ class ImageTests {
         String tag = "test-image:latest";
         String imageId = dockerService.buildDockerfile(tag, dockerfilePath);
         assertNotNull(imageId);
-        assertTrue(dockerService.getAllImages().stream().anyMatch(image -> image.getRepoTags()[0].equals(tag)));
+        assertTrue(dockerService.getAllImages().stream()
+                .anyMatch(image -> image.getRepoTags() != null
+                        && image.getRepoTags().length > 0
+                        && image.getRepoTags()[0].equals(tag)));
     }
 
     @Test
