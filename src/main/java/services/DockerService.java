@@ -1,10 +1,7 @@
 package services;
 
 import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.command.BuildImageResultCallback;
-import com.github.dockerjava.api.command.CreateContainerCmd;
-import com.github.dockerjava.api.command.CreateContainerResponse;
-import com.github.dockerjava.api.command.PullImageResultCallback;
+import com.github.dockerjava.api.command.*;
 import com.github.dockerjava.api.model.*;
 import model.ContainerRunParam;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +24,87 @@ public class DockerService {
     @Autowired
     public DockerService(DockerClient dockerClient) {
         this.dockerClient = dockerClient;
+    }
+
+    public void updateApp(String name, String dockerfilePath) {
+        try {
+            String newImageId = buildDockerfile(name, Path.of(dockerfilePath));
+
+            int nextVersion = getNextVersion(name);
+
+            String newContainerName = name + "-v" + nextVersion;
+            CreateContainerResponse newContainer = dockerClient.createContainerCmd(newImageId)
+                    .withName(newContainerName)
+                    .withHostConfig(HostConfig.newHostConfig()
+                            .withRestartPolicy(RestartPolicy.alwaysRestart())
+                            .withNetworkMode("traefik-network"))
+                    .withLabels(Map.of(
+                            "traefik.enable", "true",
+                            "traefik.http.routers." + name + ".rule", "Host(`jafeur-" + name + ".localhost`)",
+                            "traefik.http.routers." + name + ".entrypoints", "web",
+                            "traefik.http.services." + name + ".loadbalancer.server.port", "80"
+                    ))
+                    .exec();
+
+            dockerClient.startContainerCmd(newContainer.getId()).exec();
+
+            waitForContainerHealth(newContainerName);
+
+            Thread.sleep(500); // Adjust the delay as needed
+
+            dockerClient.stopContainerCmd(name).exec();
+            dockerClient.removeContainerCmd(name).exec();
+
+            dockerClient.renameContainerCmd(newContainer.getId()).withName(name).exec();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to update application: " + e.getMessage(), e);
+        }
+    }
+
+    private int getNextVersion(String baseName) {
+        List<Container> allContainers = dockerClient.listContainersCmd().withShowAll(true).exec();
+        int maxVersion = 0;
+
+        for (Container container : allContainers) {
+            String containerName = container.getNames()[0].replaceFirst("/", "");
+            if (containerName.startsWith(baseName + "-v")) {
+                try {
+                    int version = Integer.parseInt(containerName.substring((baseName + "-v").length()));
+                    maxVersion = Math.max(maxVersion, version);
+                } catch (NumberFormatException ignored) {
+                    // Ignore containers with invalid version numbers
+                }
+            }
+        }
+
+        return maxVersion + 1;
+    }
+
+    private void waitForContainerHealth(String containerName) throws InterruptedException {
+        while (true) {
+            try {
+                InspectContainerResponse containerInfo = dockerClient.inspectContainerCmd(containerName).exec();
+                InspectContainerResponse.ContainerState state = containerInfo.getState();
+
+                if (state.getHealth() == null) {
+                    System.out.println("No health check configured for container " + containerName + ". Assuming it is running.");
+                    break;
+                }
+
+                String healthStatus = state.getHealth().getStatus();
+
+                if ("healthy".equals(healthStatus)) {
+                    break;
+                } else if ("unhealthy".equals(healthStatus)) {
+                    throw new RuntimeException("Container " + containerName + " is unhealthy!");
+                }
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to inspect container " + containerName + ": " + e.getMessage(), e);
+            }
+
+            Thread.sleep(1000);
+        }
     }
 
     /// Container management
