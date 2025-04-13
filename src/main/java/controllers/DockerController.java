@@ -55,7 +55,6 @@ public class DockerController {
         dockerService.restartContainer(name);
     }
 
-    // **Configure application settings**
     @PostMapping("/Config/{id}")
     @Operation(summary = "Configure an application", description = "Configures a specific application with the provided parameters.")
     @Tag(name = "Configuration")
@@ -167,11 +166,4 @@ public class DockerController {
             return ResponseEntity.internalServerError().build();
         }
     }
-
-    @GetMapping("/quoi")
-    @Hidden
-    public String quoiFeur() {
-        return "feur";
-    }
-
 }
