@@ -57,7 +57,7 @@ public class DockerController {
     // **Configure application settings**
     @PostMapping("/Config/{id}")
     @Operation(summary = "Configure an application", description = "Configures a specific application with the provided parameters.")
-    @Tag(name = "Configuration")
+    @Tag(name = "Application")
     public ResponseEntity<String> configApp(@PathVariable("id") String id, @RequestBody Map<String, String> config) {
         return dockerService.configApp(id, config);
     }
@@ -169,7 +169,7 @@ public class DockerController {
 
     @PostMapping("/update")
     @Operation(summary = "Update application", description = "Update a specific application by its name.")
-    @Tag(name = "Update")
+    @Tag(name = "Application")
     public ResponseEntity<String> updateApp(@RequestParam String name, @RequestParam String dockerfilePath) {
         try {
             dockerService.updateApp(name, dockerfilePath);
