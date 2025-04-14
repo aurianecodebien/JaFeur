@@ -4,20 +4,35 @@ JaFeur est une application backend en Java (Spring Boot) permettant de gérer dy
 
 ## Installation via Docker
 
+### Clonez le dépôt JaFeur
+```bash
+git clone https://github.com/aurianecodebien/JaFeur.git
+```
+ou
+```bash
+git clone git@github.com:aurianecodebien/JaFeur.git
+```
+
 ### Lancer l'application
 
 Mettez vous à la racine du projet JaFeur et lancer cette commande :
 ```bash
-docker-compose up --build
+docker-compose up -d --build
 ```
 
-Cela démarre automatiquement le backend JaFeur et expose l'API sur le port **8080**.
+Cela démarre automatiquement le backend JaFeur ainsi qu'un conteneur traefik pour gérer les applications.
 
 ### Accès API
 
 Une fois le conteneur lancé, vous pouvez accéder à l’interface Swagger pour tester l’API :
 
 [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html)
+
+Le port peut être amené à changer selon les applications existantes dans la machine, le vérifier grâce à la commande suivante :
+```bash
+docker ps
+```
+Regardez ensuite la colonne PORTS pour le conteneur `jafeur`.
 
 ---
 

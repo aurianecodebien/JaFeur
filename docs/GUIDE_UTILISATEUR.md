@@ -25,7 +25,7 @@ JaFeur est une interface de contrôle pour lancer, configurer, arrêter et surve
 
 Une fois l’application lancée (voir documentation d'installation), l’interface Swagger est accessible ici :
 
-👉 [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html)
+👉 [http://localhost:8080/swagger](http://localhost:8080/swagger) *(changez le port si nécessaire)*
 
 Swagger permet de visualiser et tester tous les endpoints de l’application de manière interactive.
 
@@ -33,15 +33,15 @@ Swagger permet de visualiser et tester tous les endpoints de l’application de 
 
 
 ### Lancer et gérer des applications
-- Démarrer une application (conteneur déjà existant)
-- Redémarrer ou arrêter une application à la demande
-- Supprimer un conteneur devenu inutile
+- Démarrer une application (conteneur déjà existant) `PUT /Start/{name}`
+- Redémarrer ou arrêter une application à la demande `PUT /Stop/{name}`
+- Supprimer un conteneur devenu inutile `PUT /Remove/{name}`
 
 ---
 
 ### Configurer dynamiquement une application
 
-Le point d’entrée `/Config/{id}` permet d’ajouter, de modifier ou de supprimer des variables d’environnement sur un conteneur existant.
+Le point d’entrée `POST /Config/{id}` permet d’ajouter, de modifier ou de supprimer des variables d’environnement sur un conteneur existant.
 
 Le corps de la requête doit être au format suivant :
 
@@ -65,27 +65,30 @@ Le corps de la requête doit être au format suivant :
 ---
 
 ### Surveiller les erreurs et crashs
-- Détection automatique si un conteneur est dans un état anormal (crash)
-- Lister tous les conteneurs qui ont planté
+- Détection automatique si un conteneur est dans un état anormal (crash) 
+- Lister tous les conteneurs qui ont planté `PUT List/IsCrash`
 - Permet de bâtir des outils de monitoring simples ou de diagnostic
 
 ---
 
 ### Gérer les images Docker
-- **Pull** d’une image publique depuis Docker Hub (ex: `nginx:latest`)
-- **Build** d’une image à partir d’un Dockerfile local (ex: projet en développement)
-- **Start** d’une image en lui passant directement les paramètres (pas besoin de docker run)
-- **Suppression** d’images obsolètes
+- **Pull** d’une image publique depuis Docker Hub (ex: `nginx:latest`) `POST /image/run/{applicationName}`
+- **Build** d’une image à partir d’un Dockerfile local (ex: projet en développement) `POST /image/buildDockerfile`
+- **Start** d’une image en lui passant directement les paramètres (pas besoin de docker run) `POST /image/start/`
+- **Suppression** d’images obsolètes `DELETE /image`
 
 ---
 
 ### Accéder à l’état actuel du système Docker
-- Voir tous les conteneurs lancés ou arrêtés
-- Voir toutes les images présentes localement
+- Voir tous les conteneurs lancés ou arrêtés `GET /containers{showAll}`
+
+Si le paramètre `showAll` est à `true`, il permet de voir tous les conteneurs, même ceux qui ne sont pas lancés.
+- Voir toutes les images présentes localement `GET /images`
 
 ---
 
 ### Mettre à jour une application
+`POST /update`
 - Rebuild depuis un Dockerfile donné
 - Redéploiement automatique d’un conteneur avec la nouvelle version
 - Très utile dans un workflow CI/CD manuel ou en déploiement progressif
