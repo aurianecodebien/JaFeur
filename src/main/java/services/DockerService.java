@@ -4,6 +4,7 @@ import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.*;
 import com.github.dockerjava.api.model.*;
 import model.ContainerRunParam;
+import org.apache.catalina.Host;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -229,7 +230,8 @@ public class DockerService {
         }
 
         // Configuration des labels pour exposer l'app via Traefik
-        containerBuilder.withLabels(Map.of(
+        containerBuilder.withHostConfig(new HostConfig().withNetworkMode("traefik-network"))
+                .withLabels(Map.of(
                 "traefik.enable", "true",
                 "traefik.http.routers." + params.getName() + ".rule", "Host(`jafeur-" + params.getName() + ".localhost`)",
                 "traefik.http.routers." + params.getName() + ".entrypoints", "web",
