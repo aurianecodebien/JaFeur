@@ -39,7 +39,7 @@ public class ConfigTests {
     @Test
     @Order(1)
     void testConfigApp_AddUpdateDeleteEnvVars() throws InterruptedException {
-        String containerName = "config-test-container";
+        String containerName = "config-test-container-jafeur";
 
         // 🔁 Supprimer s'il existe déjà
         dockerService.getAllContainers().stream()

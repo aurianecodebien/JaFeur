@@ -47,22 +47,22 @@ public class ContainerTests {
     @Order(1)
     void testStartContainer() throws InterruptedException {
         Path dockerfilePath = Paths.get("src/test/resources/Dockerfile");
-        String tag = "test-image:latest";
+        String tag = "test-image-jafeur:latest";
         String imageId = dockerService.buildDockerfile(tag, dockerfilePath);
 
         CreateContainerResponse createdContainer = dockerClient.createContainerCmd(imageId)
-                .withName("test-container")
+                .withName("test-container-jafeur")
                 .exec();
 
         dockerClient.startContainerCmd(createdContainer.getId()).exec();
         assertTrue(dockerService.getRunningContainers().stream()
-                .anyMatch(container -> container.getNames()[0].equals("/" + "test-container")));
+                .anyMatch(container -> container.getNames()[0].equals("/" + "test-container-jafeur")));
     }
 
     @Test
     @Order(2)
     void testRestartContainer() {
-        String containerName = "test-container";
+        String containerName = "test-container-jafeur";
         dockerService.restartContainer(containerName);
         assertTrue(dockerService.getRunningContainers().stream()
                 .anyMatch(container -> container.getNames()[0].equals("/" + containerName)));
@@ -83,7 +83,7 @@ public class ContainerTests {
     @Test
     @Order(6)
     void testStopContainer() {
-        String containerName = "test-container";
+        String containerName = "test-container-jafeur";
         dockerService.stopContainer(containerName);
         try {
             ProcessBuilder processBuilder = new ProcessBuilder("docker", "update", "--restart=no", containerName);
@@ -102,7 +102,7 @@ public class ContainerTests {
     @Test
     @Order(7)
     void testRemoveContainer() {
-        String containerName = "test-container";
+        String containerName = "test-container-jafeur";
         dockerService.removeContainer(containerName);
         assertFalse(dockerService.getAllContainers().stream()
                 .anyMatch(container -> container.getNames()[0].equals("/" + containerName)));
@@ -112,22 +112,22 @@ public class ContainerTests {
     @Order(8)
     void testCrashingContainer() throws InterruptedException {
         Path dockerfilePath = Paths.get("src/test/resources/crashing-container/Dockerfile");
-        String tag = "crashing-container:latest";
+        String tag = "crashing-container-jafeur:latest";
         String imageId = dockerService.buildDockerfile(tag, dockerfilePath);
         CreateContainerResponse createdContainer = dockerClient.createContainerCmd(imageId)
-                .withName("crashing-container")
+                .withName("crashing-container-jafeur")
                 .exec();
         dockerClient.startContainerCmd(createdContainer.getId()).exec();
         Thread.sleep(500);
         assertTrue(dockerService.getAllContainers().stream()
-                .anyMatch(container -> container.getNames()[0].equals("/crashing-container") && container.getState().equals("exited")));
+                .anyMatch(container -> container.getNames()[0].equals("/crashing-container-jafeur") && container.getState().equals("exited")));
     }
 
     @Test
     @Order(9)
     void testIsContainerCrashed() {
-        assertTrue(dockerService.isContainerCrashed("crashing-container"));
-        dockerService.removeContainer("crashing-container");
+        assertTrue(dockerService.isContainerCrashed("crashing-container-jafeur"));
+        dockerService.removeContainer("crashing-container-jafeur");
     }
 
 }

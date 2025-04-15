@@ -65,7 +65,7 @@ class ImageTests {
     @Order(4)
     void testBuildDockerfile() {
         Path dockerfilePath = Paths.get("src/test/resources/Dockerfile");
-        String tag = "test-image:latest";
+        String tag = "test-image-jafeur:latest";
         String imageId = dockerService.buildDockerfile(tag, dockerfilePath);
         assertNotNull(imageId);
         assertTrue(dockerService.getAllImages().stream()
@@ -77,13 +77,13 @@ class ImageTests {
     @Test
     @Order(5)
     void testStartImage() {
-        ContainerRunParam params = new ContainerRunParam("test-start-container", "8080:80", Map.of("ENV_VAR", "value"), "test-image", "/data", "echo Hello");
+        ContainerRunParam params = new ContainerRunParam("test-start-container-jafeur", "8080:80", Map.of("ENV_VAR", "value"), "test-image", "/data", "echo Hello");
         String result = dockerService.startImage(params);
-        assertTrue(result.contains("test-start-container started"));
+        assertTrue(result.contains("test-start-container-jafeur started"));
 
         // if the container is running, stop it
         String id = dockerClient.listContainersCmd()
-                .withNameFilter(Arrays.asList("test-start-container"))
+                .withNameFilter(Arrays.asList("test-start-container-jafeur"))
                 .exec()
                 .stream()
                 .findFirst()
@@ -92,8 +92,8 @@ class ImageTests {
         if ("running".equals(dockerClient.inspectContainerCmd(id).exec().getState().getStatus())) {
             dockerClient.stopContainerCmd(id).exec();
         }
-        dockerService.removeContainer("test-start-container");
-        dockerService.removeImage("test-image");
+        dockerService.removeContainer("test-start-container-jafeur");
+        dockerService.removeImage("test-image-jafeur");
     }
 
 }
