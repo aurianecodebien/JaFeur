@@ -59,11 +59,10 @@ public class DockerController {
             summary = "Configure an application",
             description = "Allows adding, updating, or deleting environment variables of a container. The JSON body must contain `add`, `update`, and/or `delete` keys."
     )
-    @Tag(name = "Configuration")
+    @Tag(name = "Application")
     public ResponseEntity<String> configAppByName(@PathVariable("name") String name, @RequestBody Map<String, Object> config) {
         return dockerService.configApp(name, config);
     }
-
 
     @PutMapping("IsCrash/{name}")
     @Operation(summary = "Check application crash status", description = "Checks whether a specific application has crashed.")
