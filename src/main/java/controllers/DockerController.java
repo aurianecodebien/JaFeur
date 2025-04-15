@@ -7,8 +7,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import model.ContainerRunParam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import services.DockerService;
 
 import java.nio.file.Path;
@@ -94,12 +96,12 @@ public class DockerController {
         }
     }
 
-    @PostMapping("/image/buildDockerfile/")
-    @Operation(summary = "Build Docker image from Dockerfile", description = "Build a Docker Image from a Dockerfile.")
+    @PostMapping(path = "/image/buildDockerfile/", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Build Docker image from Dockerfile", description = "Build a Docker Image from an uploaded Dockerfile.")
     @Tag(name = "Image")
-    public ResponseEntity<String> buildDockerfile(@RequestParam String tag, @RequestParam String path) {
+    public ResponseEntity<String> buildDockerfile(@RequestParam String tag, @RequestParam("file") MultipartFile file) {
         try {
-            String id = dockerService.buildDockerfile(tag, Path.of(path));
+            String id = dockerService.buildDockerfile(tag, file);
             return ResponseEntity.ok(id);
         } catch (RuntimeException e) {
             e.printStackTrace();
@@ -172,9 +174,9 @@ public class DockerController {
     @PostMapping("/update")
     @Operation(summary = "Update application", description = "Update a specific application by its name.")
     @Tag(name = "Update")
-    public ResponseEntity<String> updateApp(@RequestParam String name, @RequestParam String dockerfilePath) {
+    public ResponseEntity<String> updateApp(@RequestParam String name, @RequestParam MultipartFile file) {
         try {
-            dockerService.updateApp(name, dockerfilePath);
+            dockerService.updateApp(name, file);
             return ResponseEntity.ok("Application updated successfully");
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();

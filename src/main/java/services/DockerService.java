@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -27,9 +28,9 @@ public class DockerService {
         this.dockerClient = dockerClient;
     }
 
-    public void updateApp(String name, String dockerfilePath) {
+    public void updateApp(String name, MultipartFile file) {
         try {
-            String newImageId = buildDockerfile(name, Path.of(dockerfilePath));
+            String newImageId = buildDockerfile(name, file);
 
             int nextVersion = getNextVersion(name);
 
@@ -214,13 +215,58 @@ public class DockerService {
         return dockerClient.listImagesCmd().exec();
     }
 
-    public String buildDockerfile(String tag, Path path) {
-        return dockerClient.buildImageCmd()
-                .withDockerfile(new File(path.toString()))
-                .withPull(true)
-                .withTags(new HashSet<>(List.of(tag)))
-                .exec(new BuildImageResultCallback())
-                .awaitImageId();
+
+    public String buildDockerfile(String tag, MultipartFile dockerfile) {
+        try {
+            // Create a temporary directory for the Docker build context
+            Path tempDir = java.nio.file.Files.createTempDirectory("docker-build-context");
+
+            // Save the uploaded Dockerfile to the temporary directory
+            File dockerfilePath = tempDir.resolve("Dockerfile").toFile();
+            dockerfile.transferTo(dockerfilePath);
+
+            // Get the directory where the Dockerfile resides
+            File dockerfileFolder = dockerfilePath.getParentFile();
+
+            // Copy all files and subdirectories from the Dockerfile's folder to the temporary directory
+            File[] files = dockerfileFolder.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    Path targetPath = tempDir.resolve(file.getName());
+                    if (file.isDirectory()) {
+                        java.nio.file.Files.walk(file.toPath())
+                                .forEach(source -> {
+                                    try {
+                                        Path destination = tempDir.resolve(file.toPath().relativize(source).toString());
+                                        java.nio.file.Files.copy(source, destination);
+                                    } catch (Exception e) {
+                                        throw new RuntimeException("Failed to copy file: " + source, e);
+                                    }
+                                });
+                    } else {
+                        java.nio.file.Files.copy(file.toPath(), targetPath);
+                    }
+                }
+            }
+
+            // Build the Docker image using the temporary directory as the build context
+            String imageId = dockerClient.buildImageCmd(tempDir.toFile())
+                    .withDockerfile(dockerfilePath)
+                    .withPull(true)
+                    .withTags(new HashSet<>(List.of(tag)))
+                    .exec(new BuildImageResultCallback())
+                    .awaitImageId();
+
+            // Clean up the temporary directory
+            java.nio.file.Files.walk(tempDir)
+                    .sorted(Comparator.reverseOrder())
+                    .map(Path::toFile)
+                    .forEach(File::delete);
+
+            return imageId;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to build Dockerfile: " + e.getMessage(), e);
+        }
     }
 
     // Lance un conteneur avec les paramètres nécessaires (env, volume, traefik)
