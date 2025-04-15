@@ -12,6 +12,8 @@ services:
       - "traefik.http.routers.jafeur.rule=Host(`jafeur.localhost`)"
       - "traefik.http.routers.jafeur.entrypoints=web"
       - "traefik.http.services.jafeur.loadbalancer.server.port=8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - traefik-network
     environment:
