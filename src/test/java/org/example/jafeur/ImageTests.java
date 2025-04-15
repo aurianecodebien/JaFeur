@@ -77,7 +77,7 @@ class ImageTests {
     @Test
     @Order(5)
     void testStartImage() {
-        ContainerRunParam params = new ContainerRunParam("test-start-container-jafeur", "8080:80", Map.of("ENV_VAR", "value"), "test-image", "/data", "echo Hello");
+        ContainerRunParam params = new ContainerRunParam("test-start-container-jafeur", "8080:80", Map.of("ENV_VAR", "value"), "test-image-jafeur", "/data", "echo Hello");
         String result = dockerService.startImage(params);
         assertTrue(result.contains("test-start-container-jafeur started"));
 
