@@ -4,7 +4,6 @@ import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.*;
 import com.github.dockerjava.api.model.*;
 import model.ContainerRunParam;
-import org.apache.catalina.Host;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +15,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.*;
 
 @Service
 public class DockerService {
@@ -150,33 +150,54 @@ public class DockerService {
                 .toList();
     }
 
-    // Applique une nouvelle configuration d'environnement (redéploiement)
-    public ResponseEntity<String> configApp(String id, Map<String, String> conf) {
-
-        var inspect = dockerClient.inspectContainerCmd(id).exec();
-        ContainerRunParam params = new ContainerRunParam(
-                inspect.getName(),
-                inspect.getNetworkSettings().getPorts().toString(),
-                conf,
-                inspect.getImageId(),
-                null,
-                null
-        );
-
-        if ("running".equals(dockerClient.inspectContainerCmd(id).exec().getState().getStatus())) {
-            dockerClient.stopContainerCmd(id).exec();
-        }
-
-        dockerClient.removeContainerCmd(id).exec();
+    public ResponseEntity<String> configApp(String name, Map<String, Object> conf) {
         try {
+            Map<String, String> envMap = new HashMap<>();
+
+            InspectContainerResponse container = dockerClient.inspectContainerCmd(name).exec();
+
+            String[] oldEnvList = container.getConfig().getEnv();
+            if (oldEnvList != null) {
+                for (String env : oldEnvList) {
+                    String[] parts = env.split("=", 2);
+                    if (parts.length == 2) {
+                        envMap.put(parts[0], parts[1]);
+                    }
+                }
+            }
+
+            Map<String, String> toAdd = (Map<String, String>) conf.getOrDefault("add", Map.of());
+            Map<String, String> toUpdate = (Map<String, String>) conf.getOrDefault("update", Map.of());
+            Map<String, String> toDelete = (Map<String, String>) conf.getOrDefault("delete", Map.of());
+
+            toAdd.forEach(envMap::put);
+            toUpdate.forEach(envMap::put);
+            toDelete.keySet().forEach(envMap::remove);
+
+            ContainerRunParam params = new ContainerRunParam(
+                    container.getName().replace("/", ""), // le nom avec '/' à retirer
+                    container.getNetworkSettings().getPorts().toString(),
+                    envMap,
+                    container.getImageId(),
+                    null,
+                    null
+            );
+
+            if ("running".equals(container.getState().getStatus())) {
+                dockerClient.stopContainerCmd(name).exec();
+            }
+            dockerClient.removeContainerCmd(name).exec();
+
+            System.out.println("Variables finales envoyées à Docker : " + params.getEnv());
+
             startImage(params);
-            return ResponseEntity.ok(id);
+            return ResponseEntity.ok(name);
+
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error: " + e.getMessage());
         }
     }
-
 
     /// Image management
 
