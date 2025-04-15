@@ -25,7 +25,7 @@ JaFeur est une interface de contrôle pour lancer, configurer, arrêter et surve
 
 Une fois l’application lancée (voir documentation d'installation), l’interface Swagger est accessible ici :
 
-👉 [http://localhost:8080/swagger](http://localhost:8080/swagger) *(changez le port si nécessaire)*
+👉 [http://localhost:8080/swagger](http://localhost:8080/swagger)
 
 Swagger permet de visualiser et tester tous les endpoints de l’application de manière interactive.
 

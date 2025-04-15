@@ -17,22 +17,29 @@ git clone git@github.com:aurianecodebien/JaFeur.git
 
 Mettez vous à la racine du projet JaFeur et lancer cette commande :
 ```bash
-docker-compose up -d --build
+mvn clean install
+```
+Lancez ensuite la commande suivante :
+```bash
+java -jar target/JaFeur-0.0.1-SNAPSHOT.jar
+```
+L'application est maintenant lancée sur le **port 8080** par défaut.
+
+Puis, créer un réseau Docker pour JaFeur :
+```bash
+docker network create traefik-network
+```
+Il faut maintenant lancer un conteneur traefik pour gérer les applications.
+```bash
+docker run -d   --name traefik-jafeur   --network traefik-network   -p 80:80   -p 8081:8080   -v /var/run/docker.sock:/var/run/docker.sock:ro traefik:v2.10   --api.insecure=true   --providers.docker=true   --entrypoints.web.address=:80
 ```
 
-Cela démarre automatiquement le backend JaFeur ainsi qu'un conteneur traefik pour gérer les applications.
 
 ### Accès API
 
-Une fois le conteneur lancé, vous pouvez accéder à l’interface Swagger pour tester l’API :
+Une fois l'application lancée, vous pouvez accéder à l’interface Swagger pour tester l’API :
 
 [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html)
-
-Le port peut être amené à changer selon les applications existantes dans la machine, le vérifier grâce à la commande suivante :
-```bash
-docker ps
-```
-Regardez ensuite la colonne PORTS pour le conteneur `jafeur`.
 
 ---
 
